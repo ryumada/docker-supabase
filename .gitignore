@@ -1,6 +1,8 @@
 .env
 .env.backup*
 
+backups/
+
 # Superseded by specific whitelist below
 # volumes/*
 # !volumes/README.md

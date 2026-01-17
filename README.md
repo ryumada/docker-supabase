@@ -59,6 +59,38 @@ Once all containers are running and healthy, you can access the services on your
 
 > **Note**: Your specific passwords (like `POSTGRES_PASSWORD` and `DASHBOARD_PASSWORD`) are generated randomly and stored in your `.env` file. Check that file to retrieve them.
 
+## Backup & Restore
+
+This project includes automated scripts for backing up and restoring your data.
+
+### Backup
+
+Run the backup script to create a timestamped backup of your database, configuration, and files.
+
+```bash
+./scripts/backup.sh
+```
+
+**What is backed up?**
+- **PostgreSQL Database**: Full dump using `pg_dumpall`, compressed as `db_dump.tar.zst` (using `zstd`).
+- **Database Config**: The `db-config` volume (containing keys), compressed as `db-config.tar.zst`.
+- **Storage**: The `volumes/storage` directory, compressed as `storage.tar.zst`.
+- **Environment**: A copy of your `.env` file.
+
+Backups are stored in `backups/backup_YYYYMMDD_HHMMSS/`.
+
+### Restore
+
+To restore from a backup, provide the path to the backup folder.
+
+**WARNING: This will overwrite your current database and storage files!**
+
+```bash
+./scripts/restore.sh backups/backup_YYYYMMDD_HHMMSS
+```
+
+The script will automatically detect the compression format (`zstd` or `gzip`) and restore the data.
+
 ## Configuration (.env)
 
 The `.env` file is the single source of truth for your configuration.
