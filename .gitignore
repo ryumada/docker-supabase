@@ -1,0 +1,47 @@
+.env
+.env.backup*
+
+# Superseded by specific whitelist below
+# volumes/*
+# !volumes/README.md
+
+# Ignore all volumes content by default
+volumes/*
+
+# Whitelist configuration files and source code
+!volumes/README.md
+!volumes/**/README.md
+!volumes/**/.README.md
+
+# API Gateway
+!volumes/api/
+!volumes/api/kong.yml
+
+# Analytics (Vector)
+!volumes/logs/
+!volumes/logs/vector.yml
+
+# Database Config & Initialization
+!volumes/db/
+!volumes/db/*.sql
+!volumes/db/init/
+!volumes/db/init/*.sql
+!volumes/db/init/data/
+volumes/db/init/init-scripts/*
+volumes/db/init/migrations/*
+!volumes/db/config/
+volumes/db/config/custom
+
+# Connection Pooler
+!volumes/pooler/
+!volumes/pooler/pooler.exs
+
+# Edge Functions (Source Code)
+!volumes/functions/
+!volumes/functions/**/index.ts
+!volumes/functions/**/deno.json
+!volumes/functions/**/.env
+
+# Explicitly Ignore Data Directories (just in case)
+volumes/db/data/
+volumes/storage/
