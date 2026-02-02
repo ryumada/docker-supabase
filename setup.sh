@@ -63,37 +63,15 @@ generate_password() {
     openssl rand -base64 24 | tr -d '/+' | cut -c1-24
 }
 
-phrase_generator() {
-    local command="$1"
-    if [ "$command" == "create" ]; then
-        if command -v python3 &>/dev/null; then
-            cat <<EOF > generate_phrase.py
-import random
-
-consonants = "bdfghjklmnprstvwz"
-vowels = "aeiou"
-
-def generate_word(length=4):
-    word = ""
-    for _ in range(length):
-        word += random.choice(consonants)
-        word += random.choice(vowels)
-    return word
-
-# Generate a word with 4 syllables (8 chars) like 'jokitaru'
-print(generate_word(4))
-EOF
-            chmod +x generate_phrase.py
-        else
-            log_error "Python3 not found. Skipping phrase generator creation."
-            exit 1
-        fi
-    elif [ "$command" == "remove" ]; then
-        rm -f generate_phrase.py
-    else
-        log_error "Invalid command: $command"
-        exit 1
-    fi
+generate_passphrase() {
+  local consonants="bcdfghjklmnpqrstvwxyz"
+  local vowels="aeiou"
+  local word=""
+  for i in {1..4}; do
+    word+="${consonants:RANDOM%21:1}"
+    word+="${vowels:RANDOM%5:1}"
+  done
+  echo "$word"
 }
 
 # Function to check if a variable has the default value from .env.example
@@ -123,18 +101,17 @@ DEFAULT_PG_META_KEY="your-crypto-key-at-least-32-characters"
 
 SECRETS_GENERATED=false
 
-phrase_generator "create"
 
 if is_default_value "DASHBOARD_USERNAME" "$DEFAULT_DASHBOARD_USER"; then
     log_info "Generating pronounceable DASHBOARD_USERNAME..."
-    NEW_USER=$(sudo -u "$REPOSITORY_OWNER" python3 generate_phrase.py)
+    NEW_USER=$(generate_passphrase)
     sudo -u "$REPOSITORY_OWNER" sed -i "s|^DASHBOARD_USERNAME=.*|DASHBOARD_USERNAME=${NEW_USER}|" "$ENV_FILE"
     log_success "Generated username: ${NEW_USER}"
 fi
 
 if is_default_value "POSTGRES_PASSWORD" "$DEFAULT_POSTGRES_PASS"; then
     log_info "Generating POSTGRES_PASSWORD..."
-    PHRASES="$(sudo -u "$REPOSITORY_OWNER" python3 generate_phrase.py)-$(sudo -u "$REPOSITORY_OWNER" python3 generate_phrase.py)-$(sudo -u "$REPOSITORY_OWNER" python3 generate_phrase.py)"
+    PHRASES="$(generate_passphrase)-$(generate_passphrase)-$(generate_passphrase)"
     sudo -u "$REPOSITORY_OWNER" sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${PHRASES}|" "$ENV_FILE"
 fi
 
@@ -150,7 +127,7 @@ fi
 
 if is_default_value "DASHBOARD_PASSWORD" "$DEFAULT_DASHBOARD_PASS"; then
     log_info "Generating DASHBOARD_PASSWORD..."
-    PHRASES="$(sudo -u "$REPOSITORY_OWNER" python3 generate_phrase.py)-$(sudo -u "$REPOSITORY_OWNER" python3 generate_phrase.py)-$(sudo -u "$REPOSITORY_OWNER" python3 generate_phrase.py)"
+    PHRASES="$(generate_passphrase)-$(generate_passphrase)-$(generate_passphrase)"
     sudo -u "$REPOSITORY_OWNER" sed -i "s|^DASHBOARD_PASSWORD=.*|DASHBOARD_PASSWORD=${PHRASES}|" "$ENV_FILE"
 fi
 
@@ -177,7 +154,6 @@ else
     log_info "pgsodium_root.key already exists. Skipping."
 fi
 
-phrase_generator "remove"
 
 # JWT Logic: If JWT_SECRET is default, generate it AND regenerate Anon/Service keys
 if is_default_value "JWT_SECRET" "$DEFAULT_JWT_SECRET"; then
